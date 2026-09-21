@@ -2,10 +2,12 @@
 
 import {
   ArrowRight,
+  Bookmark,
   Check,
   Clock3,
   CreditCard,
   Heart,
+  History,
   MapPin,
   Minus,
   Plus,
@@ -61,6 +63,8 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 
 const CART_KEY = "mesa-pronta-demo-cart";
+const FAVORITES_KEY = "mesa-pronta-demo-favorites";
+const LAST_ORDER_KEY = "mesa-pronta-demo-last-order";
 
 const fulfillmentOptions: Array<{
   id: ServiceMode;
@@ -99,6 +103,9 @@ export function FoodStorefront() {
   const [search, setSearch] = useState("");
   const [serviceMode, setServiceMode] = useState<ServiceMode>("delivery");
   const [address, setAddress] = useState("");
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [hasOrderHistory, setHasOrderHistory] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutIdempotencyKey, setCheckoutIdempotencyKey] = useState(initialOrderId);
   const [isCartHydrated, setIsCartHydrated] = useState(false);
@@ -124,11 +131,26 @@ export function FoodStorefront() {
         }
       }
 
+      const rawFavorites = window.localStorage.getItem(FAVORITES_KEY);
+      if (rawFavorites) {
+        try {
+          setFavorites(JSON.parse(rawFavorites) as string[]);
+        } catch {
+          window.localStorage.removeItem(FAVORITES_KEY);
+        }
+      }
+      setHasOrderHistory(Boolean(window.localStorage.getItem(LAST_ORDER_KEY)));
+
       setIsCartHydrated(true);
     }, 0);
 
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!isCartHydrated) return;
+    window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+  }, [favorites, isCartHydrated]);
 
   useEffect(() => {
     if (!isCartHydrated) return;
@@ -167,8 +189,8 @@ export function FoodStorefront() {
         .toLocaleLowerCase("pt-BR");
 
       return matchesCategory && (!normalizedSearch || searchable.includes(normalizedSearch));
-    });
-  }, [activeCategory, search]);
+    }).filter((product) => !showFavorites || favorites.includes(product.id));
+  }, [activeCategory, favorites, search, showFavorites]);
 
   const subtotal = getCartSubtotal(cart);
   const deliveryFee = serviceMode === "delivery" ? demoStore.deliveryFee : 0;
@@ -277,6 +299,12 @@ export function FoodStorefront() {
       });
     }
 
+    window.localStorage.setItem(
+      LAST_ORDER_KEY,
+      JSON.stringify({ items: cart, createdAt: new Date().toISOString() }),
+    );
+    setHasOrderHistory(true);
+
     setOrder({
       id: result.id,
       number: result.number,
@@ -322,6 +350,15 @@ export function FoodStorefront() {
             >
               <ShoppingBag className="size-4" />
               {cart.length ? formatBRL(total) : "Seu pedido"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowFavorites((current) => !current)}
+              className={"hidden items-center gap-2 rounded-full px-3 py-2 font-medium transition sm:inline-flex " + (showFavorites ? "bg-[#fff2df] text-[#a85d1f]" : "text-[#5c574f] hover:bg-white")}
+              aria-label="Mostrar favoritos"
+            >
+              <Bookmark className={"size-4 " + (favorites.length ? "fill-current" : "")} />
+              {favorites.length ? favorites.length : "Favoritos"}
             </button>
           </div>
         </div>
@@ -488,6 +525,15 @@ export function FoodStorefront() {
               ))}
             </nav>
 
+            <div className="mb-6 grid gap-3 md:grid-cols-[1fr_auto]">
+              <div className="flex items-center gap-3 rounded-2xl border border-[#dcebd8] bg-[#f0f8ed] p-4">
+                <span className="grid size-9 place-items-center rounded-xl bg-white text-[#4e8547] shadow-sm"><Heart className="size-4 fill-current" /></span>
+                <div className="min-w-0 flex-1"><p className="text-sm font-bold text-[#3f633d]">Clube Forno 27</p><p className="text-xs text-[#668065]">Você tem 120 pontos · faltam 80 para R$ 10 de cashback.</p></div>
+                <button type="button" onClick={() => setShowFavorites((current) => !current)} className="hidden rounded-lg bg-white px-3 py-2 text-xs font-bold text-[#4e8547] shadow-sm sm:block">{showFavorites ? "Ver cardápio" : "Ver favoritos"}</button>
+              </div>
+              {hasOrderHistory ? <button type="button" onClick={() => { try { const raw = window.localStorage.getItem(LAST_ORDER_KEY); const previous = raw ? JSON.parse(raw) as { items?: CartItem[] } : null; if (previous?.items?.length) { setCart(previous.items); setCheckoutIdempotencyKey(initialOrderId()); setShowFavorites(false); setActiveCategory("Todos"); setSearch(""); toast.success("Seu último pedido voltou para o carrinho"); } } catch { toast.error("Não foi possível repetir este pedido"); } }} className="flex items-center justify-center gap-2 rounded-2xl border border-[#e6d3ba] bg-[#fff8ed] px-4 py-3 text-left text-sm font-bold text-[#966025] md:max-w-[220px]"><History className="size-4" />Peça novamente</button> : null}
+            </div>
+
             {visibleProducts.length ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {visibleProducts.map((product) => (
@@ -495,6 +541,11 @@ export function FoodStorefront() {
                     key={product.id}
                     product={product}
                     onSelect={() => setSelectedProduct(product)}
+                    isFavorite={favorites.includes(product.id)}
+                    onFavorite={() => {
+                      setFavorites((current) => current.includes(product.id) ? current.filter((id) => id !== product.id) : [...current, product.id]);
+                      toast.success(favorites.includes(product.id) ? "Removido dos favoritos" : "Salvo nos favoritos", { description: product.name });
+                    }}
                   />
                 ))}
               </div>
@@ -596,9 +647,13 @@ export function FoodStorefront() {
 function ProductCard({
   product,
   onSelect,
+  isFavorite,
+  onFavorite,
 }: {
   product: Product;
   onSelect: () => void;
+  isFavorite: boolean;
+  onFavorite: () => void;
 }) {
   return (
     <article className="group overflow-hidden rounded-[22px] border border-black/[0.07] bg-white shadow-[0_5px_18px_rgba(33,31,26,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(33,31,26,0.1)]">
@@ -625,11 +680,9 @@ function ProductCard({
           type="button"
           className="absolute right-3 top-3 grid size-8 place-items-center rounded-full bg-white/90 text-[#625c54] shadow-sm transition hover:text-[#d9762a]"
           aria-label={"Favoritar " + product.name}
-          onClick={() => {
-            toast.success("Salvo nos favoritos", { description: product.name });
-          }}
+          onClick={onFavorite}
         >
-          <Heart className="size-4" />
+          <Heart className={"size-4 " + (isFavorite ? "fill-[#d9762a] text-[#d9762a]" : "")} />
         </button>
       </div>
       <button type="button" onClick={onSelect} className="block w-full text-left">
@@ -1338,3 +1391,4 @@ function nextStatus(status: OrderStatus): OrderStatus {
   const currentIndex = sequence.indexOf(status);
   return sequence[Math.min(sequence.length - 1, currentIndex + 1)] ?? "new";
 }
+
