@@ -17,6 +17,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p public/images
           for image in forno27-margherita.png forno27-smash-bacon.png forno27-spread.png; do
             target="public/images/$image"
             : > "$target"
