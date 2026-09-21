@@ -50,7 +50,7 @@ export function OnboardingWizard() {
     );
 
     if (!configured) {
-      setCompleted(true);
+      setCreationError("O cadastro está indisponível até a conexão de autenticação ser configurada.");
       return;
     }
 
@@ -91,11 +91,10 @@ export function OnboardingWizard() {
             <Check className="size-7" />
           </span>
           <h1 className="mt-5 text-3xl font-semibold tracking-[-0.04em]">
-            Sua loja está pronta para vender.
+            Seu estabelecimento foi criado.
           </h1>
           <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[#77736b]">
-            O cardápio inicial e a operação foram criados. Você pode revisar tudo
-            no painel a qualquer momento.
+            Agora configure o cardápio e a operação antes de publicar sua loja.
           </p>
           <div className="mt-7 grid gap-2 sm:grid-cols-2">
             <Link
@@ -105,7 +104,7 @@ export function OnboardingWizard() {
               Ver loja
             </Link>
             <Link
-              href="/admin"
+              href="/painel"
               className="grid h-11 place-items-center rounded-xl bg-[#202723] text-sm font-bold text-white hover:bg-[#344239]"
             >
               Abrir painel

@@ -1139,11 +1139,11 @@ begin
   on conflict (id) do nothing;
 
   insert into public.tenants (name, slug, timezone, status)
-  values (btrim(p_tenant_name), v_tenant_slug::citext, p_timezone, 'onboarding')
+  values (btrim(p_tenant_name), v_tenant_slug::public.citext, p_timezone, 'onboarding')
   returning id into v_tenant_id;
 
   insert into public.stores (tenant_id, name, public_slug, timezone)
-  values (v_tenant_id, btrim(p_store_name), v_store_slug::citext, p_timezone)
+  values (v_tenant_id, btrim(p_store_name), v_store_slug::public.citext, p_timezone)
   returning id into v_store_id;
 
   insert into public.tenant_memberships (tenant_id, user_id, status, is_owner, accepted_at)
@@ -1305,7 +1305,7 @@ as $$
     ), '[]'::jsonb)
   )
   from public.stores s
-  where s.public_slug = lower(btrim(p_store_slug))::citext
+  where s.public_slug::text = lower(btrim(p_store_slug))
     and s.is_storefront_published
     and s.deleted_at is null;
 $$;

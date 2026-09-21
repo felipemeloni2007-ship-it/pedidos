@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const portalPaths = { platform: "/plataforma", seller: "/painel", customer: "/conta" } as const;
 export type Portal = keyof typeof portalPaths;
@@ -14,8 +14,7 @@ export async function requirePortalSession(portal: Portal) {
 
 export async function requirePlatformAdmin() {
   const session = await requirePortalSession("platform");
-  const admin = createServiceRoleClient();
-  if (!admin) redirect("/login?portal=platform&error=configuration");
+  const admin = session.supabase;
   const { data, error } = await admin.from("platform_admins").select("user_id").eq("user_id", session.user.id).maybeSingle();
   if (error) throw new Error("Não foi possível verificar o acesso à plataforma.");
   if (!data) redirect("/acesso-negado");
