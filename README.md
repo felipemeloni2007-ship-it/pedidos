@@ -15,6 +15,22 @@ Plataforma SaaS multiempresa para venda e operação de estabelecimentos de alim
 - Fluxo de pagamento preparado por adapter. Em demonstração, o status pode ser simulado; um Pix real exige gateway, webhook assinado e validação no servidor.
 - Dados de demonstração da loja **Forno 27** para explorar o fluxo sem depender de dados reais.
 
+## Central administrativa expandida
+
+O painel `/admin` reúne a operação diária e os módulos de crescimento em uma única central responsiva:
+
+- visão executiva com pico de demanda, capacidade, alertas de estoque, pagamentos pendentes e produtos em alta;
+- central de pedidos/PDV com busca, filtros, troca de status, impressão e atalhos para cozinha;
+- catálogo com edição de disponibilidade, CMV, categorias, adicionais e edição em massa;
+- CRM com segmentos (VIP, recorrente, novo, em risco e inativo), gasto total, recompra e consentimento;
+- despacho com entregadores, SLA, zonas, taxas, pedido mínimo e agrupamento de rotas;
+- estoque com ficha técnica, fornecedores, compras, custo médio, alertas e baixa automática por venda entregue;
+- financeiro com caixa, sangria, fechamento, recebimentos por método, despesas e conciliação;
+- marketing com cupons, combos, happy hour, cashback, pontos, funil e recuperação de carrinho;
+- equipe com RBAC, permissões por função, convite e auditoria; configurações de canais, pagamentos, impressão e integrações.
+
+Na loja do consumidor, o carrinho continua persistente e o fluxo foi ampliado com favoritos locais, clube de pontos/cashback, recompra em um toque, endereço antecipado, upsell e acompanhamento do pedido.
+
 ## Arquitetura
 
 ```text
@@ -87,7 +103,7 @@ Abra a URL exibida pelo comando. Antes de desenvolver uma funcionalidade protegi
 
 ## Supabase: migrations e tipos
 
-Use migrations versionadas no repositório, por exemplo em `supabase/migrations/`. Não altere a estrutura de produção manualmente pelo Dashboard sem registrar a mesma mudança em SQL.
+Use migrations versionadas no repositório, por exemplo em `supabase/migrations/`. Não altere a estrutura de produção manualmente pelo Dashboard sem registrar a mesma mudança em SQL. A migration `20260921090000_admin_operating_system.sql` adiciona o back office de estoque, ficha técnica, fornecedores, compras, mesas, comandas, entregas, cupons, promoções, fidelidade, avaliações, caixa, despesas, notificações e integrações.
 
 ```bash
 # Autentique e vincule o projeto uma vez por máquina
@@ -184,3 +200,4 @@ O pipeline deve aplicar migrations de maneira controlada, com backup e revisão,
 - Integrações fiscais, mensageria, marketplaces, multiunidade avançada e franquias.
 
 Essas extensões devem preservar os limites de tenant e store definidos desde o início.
+
