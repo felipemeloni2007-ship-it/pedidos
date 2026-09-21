@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 function safeNextPath(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/admin";
+  return value && ["/plataforma", "/painel", "/conta", "/onboarding"].includes(value) ? value : "/acesso";
 }
 
 export async function GET(request: NextRequest) {

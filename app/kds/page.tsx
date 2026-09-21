@@ -1,9 +1,9 @@
-import { KdsBoard } from "@/components/food/kds-board";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "KDS",
 };
 
 export default function KdsPage() {
-  return <KdsBoard />;
+  redirect("/painel");
 }

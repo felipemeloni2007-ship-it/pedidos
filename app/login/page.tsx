@@ -4,6 +4,8 @@ export const metadata = {
   title: "Entrar na operação",
 };
 
-export default function LoginPage() {
-  return <AdminSignIn />;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ portal?: string; error?: string }> }) {
+  const query = await searchParams;
+  const portal = query.portal === "platform" || query.portal === "customer" ? query.portal : "seller";
+  return <AdminSignIn portal={portal} configurationMissing={query.error === "configuration"} />;
 }

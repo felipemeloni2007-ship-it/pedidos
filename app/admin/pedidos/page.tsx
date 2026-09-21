@@ -1,9 +1,9 @@
-import { AdminWorkspace } from "@/components/food/admin-workspace";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Central de pedidos",
 };
 
 export default function OrdersPage() {
-  return <AdminWorkspace view="orders" />;
+  redirect("/painel");
 }

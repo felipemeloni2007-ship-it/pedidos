@@ -1,10 +1,9 @@
-import { AdminCommandCenter } from "@/components/food/admin-command-center";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Painel operacional",
 };
 
 export default function AdminPage() {
-  return <AdminCommandCenter />;
+  redirect("/plataforma");
 }
-

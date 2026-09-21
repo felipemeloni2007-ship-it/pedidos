@@ -28,38 +28,11 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data: claimsResult } = await supabase.auth.getClaims();
-  const claims = claimsResult?.claims;
-
-  const isAdminRoute =
-    request.nextUrl.pathname.startsWith("/admin") ||
-    request.nextUrl.pathname.startsWith("/kds");
-  const isOnboardingRoute = request.nextUrl.pathname.startsWith("/onboarding");
-
-  if ((isAdminRoute || isOnboardingRoute) && !claims?.sub) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    loginUrl.search = "";
-    loginUrl.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
+  // Refresh cookies here; each portal verifies its own authorization on the server.
+  await supabase.auth.getClaims();
+  if (/^\/(plataforma|painel|conta|admin|login|onboarding|auth)(\/|$)/.test(request.nextUrl.pathname)) {
+    response.headers.set("Cache-Control", "private, no-store");
   }
-
-  if (isAdminRoute) {
-    const { data: memberships } = await supabase
-      .from("tenant_memberships")
-      .select("id")
-      .eq("status", "active")
-      .limit(1);
-
-    if (!memberships?.length) {
-      const storefrontUrl = request.nextUrl.clone();
-      storefrontUrl.pathname = "/";
-      storefrontUrl.search = "";
-      storefrontUrl.searchParams.set("access", "denied");
-      return NextResponse.redirect(storefrontUrl);
-    }
-  }
-
   return response;
 }
 
