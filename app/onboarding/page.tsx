@@ -1,4 +1,4 @@
-import { OnboardingWizard } from "@/components/food/onboarding-wizard";
+import { LiveOnboarding } from "@/components/food/live-onboarding";
 import { requirePortalSession } from "@/lib/auth/portals";
 
 export const metadata = {
@@ -7,5 +7,5 @@ export const metadata = {
 
 export default async function OnboardingPage() {
   await requirePortalSession("seller");
-  return <OnboardingWizard />;
+  return <LiveOnboarding />;
 }

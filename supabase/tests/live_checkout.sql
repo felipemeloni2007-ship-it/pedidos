@@ -1,0 +1,41 @@
+begin;
+create temporary table live_fixture (tenant_id uuid,store_id uuid,product_id uuid,order_id uuid,token uuid);
+grant all on live_fixture to authenticated,anon;
+insert into auth.users(id,email) values ('20000000-0000-4000-8000-000000000001','checkout-owner@example.invalid');
+select set_config('request.jwt.claims','{"sub":"20000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+set local role authenticated;
+do $$ declare t record; c uuid; p uuid; begin
+ select * into t from public.bootstrap_tenant('Checkout Test','checkout-test','Checkout Store','checkout-store');
+ insert into public.categories(tenant_id,store_id,name) values(t.created_tenant_id,t.created_store_id,'Refeições') returning id into c;
+ insert into public.products(tenant_id,store_id,category_id,name,base_price) values(t.created_tenant_id,t.created_store_id,c,'Refeição',25) returning id into p;
+ update public.stores set is_storefront_published=true,accepting_orders=true where id=t.created_store_id;
+ insert into live_fixture values(t.created_tenant_id,t.created_store_id,p,null,null);
+end $$;
+reset role;
+select set_config('request.jwt.claims','{"role":"anon"}',true);
+set local role anon;
+do $$ declare r jsonb; r2 jsonb; p uuid; k uuid:=gen_random_uuid(); begin
+ select product_id into p from live_fixture;
+ r:=public.storefront_checkout('checkout-store',k,'pickup','{"name":"Cliente Teste","phone":"11999998888"}',jsonb_build_array(jsonb_build_object('productId',p,'quantity',2,'selections','{}'::jsonb)));
+ if (r->>'total')::numeric<>50 then raise exception 'Incorrect price'; end if;
+ r2:=public.storefront_checkout('checkout-store',k,'pickup','{"name":"Cliente Teste","phone":"11999998888"}',jsonb_build_array(jsonb_build_object('productId',p,'quantity',2,'selections','{}'::jsonb)));
+ if r2->>'id'<>r->>'id' then raise exception 'Idempotency failure'; end if;
+ update live_fixture set order_id=(r->>'id')::uuid,token=(r->>'trackingToken')::uuid;
+ if not exists(select 1 from public.get_guest_order_tracking((r->>'id')::uuid,(r->>'trackingToken')::uuid)) then raise exception 'Tracking failure'; end if;
+ if exists(select 1 from public.get_guest_order_tracking((r->>'id')::uuid,gen_random_uuid())) then raise exception 'Tracking token bypass'; end if;
+end $$;
+reset role;
+select set_config('request.jwt.claims','{"sub":"20000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+set local role authenticated;
+do $$ declare o uuid; begin
+ select order_id into o from live_fixture;
+ perform public.change_order_status(o,'confirmed');
+ perform public.change_order_status(o,'preparing');
+ perform public.change_order_status(o,'ready');
+ perform public.change_order_status(o,'delivered');
+ if not exists(select 1 from public.orders where id=o and status='delivered' and payment_status='pending') then raise exception 'Lifecycle or payment status failure'; end if;
+ if (select count(*) from public.order_status_history where order_id=o)<>5 then raise exception 'History missing'; end if;
+end $$;
+reset role;
+select 'PASS: catalog, guest checkout, canonical prices, idempotency, protected tracking, kitchen lifecycle, history, no fake payment' as result;
+rollback;

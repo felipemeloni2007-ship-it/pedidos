@@ -1,5 +1,11 @@
 # Pedidos
 
+## Estado operacional — 22/09/2026
+
+Banco ativo: `asdlqhuookyainylcdmg`. As entradas reais são `/plataforma` (SaaS), `/painel` (lojas), `/conta` (cliente) e `/loja/[slug]` (cardápio). A raiz lista lojas publicadas. Autenticação, criação de estabelecimento, CRUD básico de catálogo, disponibilidade, bairros/taxas, checkout em dinheiro, acompanhamento e transições de produção usam Supabase real. Foram testados isolamento de tenants e 12 etapas HTTP. A conta de administrador inicial depende da indicação de um e-mail confirmado.
+
+Os módulos avançados descritos abaixo são escopo de produto, não uma declaração de conclusão. Consulte `docs/portal-status.md` para o status exato. Não aplique o SQL de `supabase/drafts`: ele está fora das migrations por ainda exigir revisão de permissões. O histórico remoto deve ser reconciliado com a CLI antes de `db push`, pois a aplicação inicial foi feita pelo MCP.
+
 Plataforma SaaS multiempresa para venda e operação de estabelecimentos de alimentação. O produto separa duas experiências: um painel operacional para o estabelecimento e uma loja pública mobile-first para o consumidor.
 
 > **Escopo atual:** este repositório deve priorizar a Fase 1 — catálogo, pedido e operação. Recursos como fiscal, integrações oficiais de WhatsApp/iFood, roteirização, franquias e automações avançadas ficam para fases posteriores. Não há promessa de integração de pagamento, mensageria ou emissão fiscal até que um provider seja configurado e validado.
@@ -200,4 +206,3 @@ O pipeline deve aplicar migrations de maneira controlada, com backup e revisão,
 - Integrações fiscais, mensageria, marketplaces, multiunidade avançada e franquias.
 
 Essas extensões devem preservar os limites de tenant e store definidos desde o início.
-

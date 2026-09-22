@@ -1,3 +1,4 @@
+-- DRAFT ONLY: not applied. Module-specific authorization must be reviewed before migration.
 -- Mesa Pronta · Admin operating system
 -- Adds the durable records behind stock, purchasing, floor service, delivery,
 -- loyalty, promotions, CRM automation, finance and integrations. Every row is
@@ -489,4 +490,3 @@ on conflict do nothing;
 -- Customer-facing review/favorite-style flows can be added through verified
 -- customer identities; anonymous checkout never receives direct table writes.
 revoke all on table public.reviews, public.loyalty_accounts, public.loyalty_transactions from anon;
-

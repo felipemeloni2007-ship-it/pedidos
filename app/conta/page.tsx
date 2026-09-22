@@ -11,6 +11,10 @@ export default async function CustomerPage() {
     if (ordersError) throw new Error("Não foi possível consultar seus pedidos.");
     return data ?? [];
   }));
-  const orders = groups.flat().sort((a,b) => b.created_at.localeCompare(a.created_at));
+  const {data:links,error:linksError}=await supabase.from("order_accounts").select("order_id").eq("user_id",user.id);
+  if(linksError)throw Error("Não foi possível consultar seus pedidos.");
+  const direct=links?.length?await supabase.from("orders").select("id,display_number,status,total_amount,created_at").in("id",links.map(l=>l.order_id)).order("created_at",{ascending:false}).limit(50):{data:[],error:null};
+  if(direct.error)throw Error("Não foi possível consultar seus pedidos.");
+  const orders = [...new Map([...groups.flat(),...(direct.data??[])].map(o=>[o.id,o])).values()].sort((a,b) => b.created_at.localeCompare(a.created_at));
   return <PortalShell title="Minha conta" email={user.email}><h1 className="text-3xl font-semibold">Meus pedidos</h1><div className="divide-y rounded-xl border bg-white">{orders.map(order => <article key={order.id} className="flex justify-between gap-4 p-5"><span>Pedido #{order.display_number}</span><span>{order.status}</span><strong>{Number(order.total_amount).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</strong></article>)}{!orders.length && <p className="p-5">Você ainda não tem pedidos vinculados à sua conta.</p>}</div></PortalShell>;
 }
